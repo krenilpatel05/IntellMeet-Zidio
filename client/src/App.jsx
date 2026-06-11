@@ -7,15 +7,18 @@ import Meetings from "./pages/Meetings";
 import Tasks from "./pages/Tasks";
 import ChatRoom from "./pages/ChatRoom";
 import VideoRoom from "./pages/VideoRoom";
+import PostMeetingAI from "./pages/PostMeetingAI"; // 👈 REGISTERED: Added from Week 3 AI Guidelines
 import ProtectedRoute from "./components/ProtectedRoute";
 
 function App() {
   return (
     <BrowserRouter>
       <Routes>
+        {/* Auth Module Entry Points */}
         <Route path="/" element={<Login />} />
         <Route path="/register" element={<Register />} />
 
+        {/* Secure Workspace Platform Endpoints */}
         <Route
           path="/dashboard"
           element={
@@ -46,10 +49,10 @@ function App() {
         <Route
           path="/video"
           element={
-          <ProtectedRoute>
-          <VideoRoom />
-          </ProtectedRoute>
-        }
+            <ProtectedRoute>
+              <VideoRoom />
+            </ProtectedRoute>
+          }
         />
 
         <Route
@@ -57,6 +60,16 @@ function App() {
           element={
             <ProtectedRoute>
               <ChatRoom />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* 🛠️ PDF TIMELINE INTEGRATION: Day 15/16 Post-Meeting AI Summary Matrix */}
+        <Route
+          path="/ai-insights"
+          element={
+            <ProtectedRoute>
+              <PostMeetingAI />
             </ProtectedRoute>
           }
         />

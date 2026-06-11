@@ -64,7 +64,32 @@ router.put("/edit/:id", async (req, res) => {
   }
 });
 
-// Mark Task Complete
+// 🛠️ DAY 18 & 19 EXCLUSIVE: Dynamic Kanban Status Sync Route
+// Frontend par boards ke columns toggles ko direct catch karega (Pending, In Progress, Completed)
+router.put("/update-status/:id", async (req, res) => {
+  try {
+    const { status } = req.body; 
+    
+    const task = await Task.findByIdAndUpdate(
+      req.params.id,
+      { status },
+      { new: true }
+    );
+
+    res.json({
+      success: true,
+      task,
+      message: "Kanban Status Updated Successfully",
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+});
+
+// Mark Task Complete (Legacy Button Fallback Endpoint)
 router.put("/:id", async (req, res) => {
   try {
     const task = await Task.findByIdAndUpdate(

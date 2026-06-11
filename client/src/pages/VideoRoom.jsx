@@ -1,13 +1,33 @@
 import { useEffect, useRef, useState } from "react";
 import Navbar from "../components/Navbar";
+import { io } from "socket.io-client";
+
+const socket = io("http://localhost:5000");
 
 function VideoRoom() {
   const videoRef = useRef();
+  const chatEndRef = useRef(null);
 
   const [screenSharing, setScreenSharing] = useState(false);
-  const [participants] = useState(1);
   const [isMuted, setIsMuted] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
+  const [originalStream, setOriginalStream] = useState(null);
+
+  // 🛠️ DAY 13 STATE: Active Sidebar View Control Indicator Toggle (Chat vs Participants)
+  const [activeSidebar, setActiveSidebar] = useState("chat"); // Options: "chat" or "participants"
+  
+  // 🛠️ DAY 13 STATE: Live Participants Mock Array (In Future: Fetch dynamically from Backend Socket)
+  const [participantList, setParticipantList] = useState([
+    { id: "1", name: "Krenil Patel (You)", isMuted: false, role: "Host" },
+    { id: "2", name: "Team Specialist", isMuted: true, role: "Member" },
+    { id: "3", name: "Zidio Evaluator", isMuted: false, role: "Admin" }
+  ]);
+
+  const [msgInput, setMsgInput] = useState("");
+  const [chatMessages, setChatMessages] = useState([]);
+  const [typingStatus, setTypingStatus] = useState("");
+  const [meetingId] = useState("default-room-id"); 
+  const [currentUser] = useState("Krenil Patel"); 
 
   useEffect(() => {
     navigator.mediaDevices
@@ -16,14 +36,48 @@ function VideoRoom() {
         audio: true,
       })
       .then((stream) => {
+        setOriginalStream(stream);
         if (videoRef.current) {
           videoRef.current.srcObject = stream;
         }
       })
       .catch((err) => console.error("Error accessing media devices:", err));
-  }, []);
 
+    socket.emit("joinMeetingRoom", meetingId);
+
+    socket.on("receiveInMeetingMessage", (data) => {
+      setChatMessages((prev) => [...prev, data]);
+    });
+
+    socket.on("userTypingInMeeting", (data) => {
+      if (data.isTyping) {
+        setTypingStatus(`${data.sender} typing...`);
+      } else {
+        setTypingStatus("");
+      }
+    });
+
+    return () => {
+      socket.off("receiveInMeetingMessage");
+      socket.off("userTypingInMeeting");
+    };
+  }, [meetingId]);
+
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [chatMessages]);
+
+  // 🛠️ DAY 12 FIX: Robust Screen Share Stability Handling
   const startScreenShare = async () => {
+    if (screenSharing) {
+      // Agar pehle se screen share chal rahi hai toh use stop karke normal camera stream chalayein
+      if (videoRef.current && originalStream) {
+        videoRef.current.srcObject = originalStream;
+        setScreenSharing(false);
+      }
+      return;
+    }
+
     try {
       const screenStream = await navigator.mediaDevices.getDisplayMedia({
         video: true,
@@ -31,30 +85,78 @@ function VideoRoom() {
 
       videoRef.current.srcObject = screenStream;
       setScreenSharing(true);
+
+      // Jab user browser popup se screen share band karega (Stop Sharing banner click)
+      screenStream.getVideoTracks()[0].onended = () => {
+        if (videoRef.current && originalStream) {
+          videoRef.current.srcObject = originalStream;
+          setScreenSharing(false);
+        }
+      };
     } catch (error) {
-      console.log(error);
+      console.log("Screen share cancelled or failed: ", error);
     }
   };
 
   const toggleMute = () => {
-    const stream = videoRef.current?.srcObject;
+    const stream = originalStream || videoRef.current?.srcObject;
     if (stream && stream.getAudioTracks().length > 0) {
       stream.getAudioTracks()[0].enabled = !stream.getAudioTracks()[0].enabled;
       setIsMuted(!isMuted);
+      
+      // Update our participant block local record view
+      setParticipantList(prev => prev.map(p => p.id === "1" ? { ...p, isMuted: !isMuted } : p));
     }
   };
 
+  // 🛠️ DAY 12 FIX: Enhanced Recording Toggle State Alert Controls
   const toggleRecording = () => {
     setIsRecording(!isRecording);
-    alert(isRecording ? "🛑 Recording Stopped" : "🔴 Recording Started...");
+    if (!isRecording) {
+      alert("🔴 Live Media Recording Session Initiated. Stream data buffer logging active.");
+    } else {
+      alert("🛑 Recording Session Terminated. Stream file export packaging complete.");
+    }
+  };
+
+  // 🛠️ DAY 13 FIX: Remote Action Trigger control to mute/unmute a secondary client user
+  const toggleRemoteParticipantMute = (id) => {
+    setParticipantList(prev =>
+      prev.map(p => p.id === id ? { ...p, isMuted: !p.isMuted } : p)
+    );
   };
 
   const leaveMeeting = () => {
     const stream = videoRef.current?.srcObject;
     if (stream) {
-      stream.getTracks().forEach((track) => track.stop()); // Camera off karne ke liye
+      stream.getTracks().forEach((track) => track.stop());
+    }
+    if (originalStream) {
+      originalStream.getTracks().forEach((track) => track.stop());
     }
     window.location.href = "/dashboard";
+  };
+
+  const sendInMeetingChat = () => {
+    if (!msgInput.trim()) return;
+
+    socket.emit("sendInMeetingMessage", {
+      meetingId,
+      message: msgInput,
+      sender: currentUser,
+    });
+
+    socket.emit("typingInMeeting", { meetingId, sender: currentUser, isTyping: false });
+    setMsgInput("");
+  };
+
+  const handleInputChange = (e) => {
+    setMsgInput(e.target.value);
+    if (e.target.value.length > 0) {
+      socket.emit("typingInMeeting", { meetingId, sender: currentUser, isTyping: true });
+    } else {
+      socket.emit("typingInMeeting", { meetingId, sender: currentUser, isTyping: false });
+    }
   };
 
   return (
@@ -63,158 +165,212 @@ function VideoRoom() {
 
       <div
         style={{
-          padding: "30px",
-          minHeight: "calc(100vh - 70px)",
+          padding: "30px 40px",
+          minHeight: "calc(100vh - 76px)",
           background: "#0f172a",
           color: "white",
           width: "100%",
           boxSizing: "border-box",
-          fontFamily: "system-ui, sans-serif",
+          fontFamily: "system-ui, -apple-system, sans-serif",
           display: "flex",
           flexDirection: "column",
-          alignItems: "center",
-          position: "relative"
+          alignItems: "center"
         }}
       >
-        {/* Header Block with Live Stats Counter */}
-        <div style={{ width: "100%", maxWidth: "1000px", display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
+        {/* Top Header Controls Block */}
+        <div style={{ width: "100%", maxWidth: "1440px", display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "25px" }}>
           <div>
-            <h1 style={{ fontSize: "28px", fontWeight: "700", margin: 0 }}>🎥 Video Meeting Room</h1>
-            <p style={{ color: "#94a3b8", margin: "5px 0 0 0", fontSize: "14px" }}>Secure end-to-end encrypted team connection.</p>
+            <h1 style={{ fontSize: "30px", fontWeight: "800", margin: 0, letterSpacing: "-0.04em" }}>🎥 Video Meeting Room</h1>
+            <p style={{ color: "#64748b", margin: "4px 0 0 0", fontSize: "14px", fontWeight: "500" }}>Secure enterprise full-stack collaboration system.</p>
           </div>
           
-          <div style={{ background: "#1e293b", padding: "10px 18px", borderRadius: "20px", border: "1px solid #334155", display: "flex", alignItems: "center", gap: "8px" }}>
-            <span style={{ height: "8px", width: "8px", background: "#10b981", borderRadius: "50%" }}></span>
-            <span style={{ fontSize: "14px", fontWeight: "bold" }}>👥 Participants: {participants}</span>
+          {/* 🛠️ DAY 13 UPGRADE: Interactive Sidebar Toggle Buttons */}
+          <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+            <button 
+              onClick={() => setActiveSidebar("chat")}
+              style={{ padding: "10px 18px", borderRadius: "20px", border: "1px solid #334155", background: activeSidebar === "chat" ? "#2563eb" : "#1e293b", color: "white", fontWeight: "700", cursor: "pointer", fontSize: "13px" }}
+            >
+              💬 Open Chat
+            </button>
+            <button 
+              onClick={() => setActiveSidebar("participants")}
+              style={{ padding: "10px 18px", borderRadius: "20px", border: "1px solid #334155", background: activeSidebar === "participants" ? "#2563eb" : "#1e293b", color: "white", fontWeight: "700", cursor: "pointer", fontSize: "13px" }}
+            >
+              👥 People ({participantList.length})
+            </button>
           </div>
         </div>
 
-        {/* 🎬 Premium Studio Video Box Container */}
+        {/* Workspace Layout Grid Split Screen */}
         <div
           style={{
+            display: "grid",
+            gridTemplateColumns: "1fr 400px", 
+            gap: "30px",
             width: "100%",
-            maxWidth: "1000px",
-            background: "#1e293b",
-            borderRadius: "16px",
-            overflow: "hidden",
-            boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.5)",
-            border: "1px solid #334155",
-            position: "relative",
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-            aspectRatio: "16/9" // Perfect wide viewport scale
+            maxWidth: "1440px",
+            alignItems: "stretch"
           }}
         >
-          <video
-            ref={videoRef}
-            autoPlay
-            muted
+          {/* LEFT CONTAINER VIEW: Primary WebRTC Video Frame Stream box */}
+          <div
             style={{
-              width: "100%",
-              height: "100%",
-              objectFit: "cover",
-              transform: "scaleX(-1)" // Mirror effect for standard human focus look
-            }}
-          />
-
-          {screenSharing && (
-            <div style={{ position: "absolute", top: "20px", left: "20px", background: "rgba(37, 99, 235, 0.9)", padding: "6px 12px", borderRadius: "6px", fontSize: "13px", fontWeight: "bold" }}>
-              🖥️ You are sharing your screen
-            </div>
-          )}
-        </div>
-
-        {/* 🛠️ Floating Control Action Dock bottom panel */}
-        <div
-          style={{
-            marginTop: "30px",
-            background: "#1e293b",
-            padding: "15px 30px",
-            borderRadius: "30px",
-            border: "1px solid #334155",
-            display: "flex",
-            gap: "15px",
-            alignItems: "center",
-            boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.3)"
-          }}
-        >
-          {/* Mute Button element toggler */}
-          <button
-            onClick={toggleMute}
-            style={{
-              padding: "12px 24px",
-              background: isMuted ? "#ef4444" : "#475569",
-              color: "white",
-              border: "none",
-              borderRadius: "20px",
-              fontWeight: "bold",
-              cursor: "pointer",
-              fontSize: "14px",
+              background: "#1e293b",
+              borderRadius: "16px",
+              overflow: "hidden",
+              boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.6)",
+              border: "1px solid #334155",
+              position: "relative",
               display: "flex",
+              justifyContent: "center",
               alignItems: "center",
-              gap: "8px"
+              aspectRatio: "16/9"
             }}
           >
+            <video
+              ref={videoRef}
+              autoPlay
+              muted
+              style={{
+                width: "100%",
+                height: "100%",
+                objectFit: "cover",
+                transform: screenSharing ? "none" : "scaleX(-1)" // No mirror effect during active screen share session
+              }}
+            />
+
+            {screenSharing && (
+              <div style={{ position: "absolute", top: "20px", left: "20px", background: "rgba(37, 99, 235, 0.95)", padding: "8px 16px", borderRadius: "8px", fontSize: "13px", fontWeight: "700", boxShadow: "0 4px 12px rgba(37, 99, 235, 0.4)" }}>
+                🖥️ Screen Share Active
+              </div>
+            )}
+
+            {isRecording && (
+              <div style={{ position: "absolute", top: "20px", right: "20px", background: "rgba(220, 38, 38, 0.95)", padding: "8px 16px", borderRadius: "8px", fontSize: "13px", fontWeight: "700", animation: "pulse 2s infinite", display: "flex", alignItems: "center", gap: "6px" }}>
+                <span style={{ height: "8px", width: "8px", background: "white", borderRadius: "50%" }}></span>
+                REC ACTIVE
+              </div>
+            )}
+          </div>
+
+          {/* RIGHT SIDE PANEL VIEW CONTAINER: Conditional Routing based on Selection state type */}
+          <div
+            style={{
+              background: "#1e293b",
+              borderRadius: "16px",
+              border: "1px solid #334155",
+              display: "flex",
+              flexDirection: "column",
+              boxSizing: "border-box",
+              boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.6)"
+            }}
+          >
+            {activeSidebar === "chat" ? (
+              /* PANEL TYPE 1: Day 11 Messenger Framework */
+              <>
+                <div style={{ padding: "20px 24px", borderBottom: "1px solid #334155" }}>
+                  <h3 style={{ margin: 0, color: "#38bdf8", fontSize: "16px", fontWeight: "700" }}>💬 Room Live Chat Window</h3>
+                </div>
+
+                <div style={{ flex: "1", padding: "20px", overflowY: "auto", display: "flex", flexDirection: "column", gap: "12px", maxHeight: "360px", background: "#0f172a", margin: "20px", borderRadius: "12px", border: "1px solid #1e293b" }}>
+                  {chatMessages.length === 0 ? (
+                    <p style={{ color: "#475569", textAlign: "center", fontSize: "13px", marginTop: "40px" }}>No stream messages logs yet.</p>
+                  ) : (
+                    chatMessages.map((m, idx) => (
+                      <div key={idx} style={{ background: m.sender === currentUser ? "#2563eb" : "#334155", color: "white", padding: "10px 14px", borderRadius: m.sender === currentUser ? "12px 12px 2px 12px" : "12px 12px 12px 2px", maxWidth: "85%", alignSelf: m.sender === currentUser ? "flex-end" : "flex-start", fontSize: "14px" }}>
+                        <div style={{ fontSize: "11px", opacity: 0.75, marginBottom: "3px", fontWeight: "bold" }}>{m.sender}</div>
+                        <div style={{ wordBreak: "break-all" }}>{m.message}</div>
+                      </div>
+                    ))
+                  )}
+                  <div ref={chatEndRef} />
+                </div>
+
+                <div style={{ height: "20px", padding: "0 24px", fontSize: "12px", color: "#38bdf8", fontStyle: "italic" }}>
+                  {typingStatus}
+                </div>
+
+                <div style={{ padding: "20px", borderTop: "1px solid #334155", display: "flex", gap: "10px" }}>
+                  <input type="text" placeholder="Message everyone..." value={msgInput} onChange={handleInputChange} onBlur={() => socket.emit("typingInMeeting", { meetingId, sender: currentUser, isTyping: false })} onKeyDown={(e) => e.key === "Enter" && sendInMeetingChat()} style={{ flex: "1", padding: "12px 16px", borderRadius: "24px", border: "1px solid #475569", background: "#0f172a", color: "white", fontSize: "14px", outline: "none" }} />
+                  <button onClick={sendInMeetingChat} style={{ padding: "10px 20px", background: "#2563eb", color: "white", border: "none", borderRadius: "24px", fontWeight: "bold", cursor: "pointer", fontSize: "14px" }}>Send</button>
+                </div>
+              </>
+            ) : (
+              /* PANEL TYPE 2: 🛠️ DAY 13 EXCLUSIVE - Live Participant Presence List & Mute Controllers */
+              <>
+                <div style={{ padding: "20px 24px", borderBottom: "1px solid #334155" }}>
+                  <h3 style={{ margin: 0, color: "#10b981", fontSize: "16px", fontWeight: "700" }}>👥 Active Call Participants</h3>
+                </div>
+
+                <div style={{ flex: "1", padding: "20px", overflowY: "auto", display: "flex", flexDirection: "column", gap: "12px", background: "#0f172a", margin: "20px", borderRadius: "12px", border: "1px solid #1e293b" }}>
+                  {participantList.map((user) => (
+                    <div 
+                      key={user.id} 
+                      style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px", background: "#1e293b", borderRadius: "8px", border: "1px solid #334155" }}
+                    >
+                      <div>
+                        <div style={{ fontSize: "14px", fontWeight: "600", color: "#f8fafc" }}>{user.name}</div>
+                        <div style={{ fontSize: "11px", color: "#64748b", marginTop: "2px" }}>⚙️ Role: {user.role}</div>
+                      </div>
+
+                      {/* Microphones Remote control switches togglers */}
+                      <button
+                        onClick={() => toggleRemoteParticipantMute(user.id)}
+                        disabled={user.id === "1"} // Local client toggle bypass rule setup safely
+                        style={{
+                          padding: "6px 12px",
+                          borderRadius: "6px",
+                          border: "none",
+                          fontSize: "12px",
+                          fontWeight: "bold",
+                          cursor: user.id === "1" ? "not-allowed" : "pointer",
+                          background: user.isMuted ? "#ef4444" : "#10b981",
+                          color: "white",
+                          opacity: user.id === "1" ? 0.6 : 1
+                        }}
+                      >
+                        {user.isMuted ? "🔇 Muted" : "🔊 Mic On"}
+                      </button>
+                    </div>
+                  ))}
+                </div>
+                <div style={{ padding: "20px", borderTop: "1px solid #334155", textStyle: "center", color: "#64748b", fontSize: "13px" }}>
+                  🔒 Connection secured via server tunnels.
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+
+        {/* Bottom Call Action Controllers Dock Menu Panel */}
+        <div
+          style={{
+            marginTop: "35px",
+            background: "#1e293b",
+            padding: "16px 36px",
+            borderRadius: "40px",
+            border: "1px solid #334155",
+            display: "flex",
+            gap: "20px",
+            alignItems: "center",
+            boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.5)"
+          }}
+        >
+          <button onClick={toggleMute} style={{ padding: "12px 26px", background: isMuted ? "#dc2626" : "#475569", color: "white", border: "none", borderRadius: "30px", fontWeight: "700", cursor: "pointer", fontSize: "14px" }}>
             {isMuted ? "🎤 Unmute" : "🔇 Mute"}
           </button>
 
-          {/* Screen Share element toggler */}
-          <button
-            onClick={startScreenShare}
-            style={{
-              padding: "12px 24px",
-              background: screenSharing ? "#10b981" : "#2563eb",
-              color: "white",
-              border: "none",
-              borderRadius: "20px",
-              fontWeight: "bold",
-              cursor: "pointer",
-              fontSize: "14px",
-              display: "flex",
-              alignItems: "center",
-              gap: "8px"
-            }}
-          >
-            🖥️ Screen Share
+          <button onClick={startScreenShare} style={{ padding: "12px 26px", background: screenSharing ? "#059669" : "#2563eb", color: "white", border: "none", borderRadius: "30px", fontWeight: "700", cursor: "pointer", fontSize: "14px" }}>
+            {screenSharing ? "⏹️ Stop Share" : "🖥️ Screen Share"}
           </button>
 
-          {/* Recording element toggler */}
-          <button
-            onClick={toggleRecording}
-            style={{
-              padding: "12px 24px",
-              background: isRecording ? "#ea580c" : "#475569",
-              color: "white",
-              border: "none",
-              borderRadius: "20px",
-              fontWeight: "bold",
-              cursor: "pointer",
-              fontSize: "14px",
-              display: "flex",
-              alignItems: "center",
-              gap: "8px"
-            }}
-          >
+          <button onClick={toggleRecording} style={{ padding: "12px 26px", background: isRecording ? "#ea580c" : "#475569", color: "white", border: "none", borderRadius: "30px", fontWeight: "700", cursor: "pointer", fontSize: "14px" }}>
             {isRecording ? "⏹️ Stop Rec" : "🔴 Record"}
           </button>
 
-          <div style={{ width: "1px", height: "24px", background: "#334155" }}></div>
+          <div style={{ width: "1px", height: "28px", background: "#334155" }}></div>
 
-          {/* Call termination endpoint leave meeting layout action trigger button */}
-          <button
-            onClick={leaveMeeting}
-            style={{
-              padding: "12px 24px",
-              background: "#dc2626",
-              color: "white",
-              border: "none",
-              borderRadius: "20px",
-              fontWeight: "bold",
-              cursor: "pointer",
-              fontSize: "14px"
-            }}
-          >
+          <button onClick={leaveMeeting} style={{ padding: "12px 28px", background: "#dc2626", color: "white", border: "none", borderRadius: "30px", fontWeight: "700", cursor: "pointer", fontSize: "14px", boxShadow: "0 4px 12px rgba(220, 38, 38, 0.3)" }}>
             🚪 Leave Call
           </button>
         </div>

@@ -38,6 +38,7 @@ function Tasks() {
         title,
         description,
         assignedTo,
+        status: "Pending"
       });
 
       alert("✅ Task Created Successfully");
@@ -106,108 +107,134 @@ function Tasks() {
 
       <div
         style={{
-          padding: "40px 30px",
-          minHeight: "100vh",
+          minHeight: "calc(100vh - 76px)",
           background: "#0f172a",
           color: "white",
-          width: "100%",
+          fontFamily: "system-ui, -apple-system, sans-serif",
+          padding: "30px 40px",
           boxSizing: "border-box",
-          fontFamily: "system-ui, sans-serif"
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center"
         }}
       >
-        <div style={{ marginBottom: "30px" }}>
-          <h1 style={{ fontSize: "32px", fontWeight: "700", margin: "0 0 10px 0" }}>✅ Task Management</h1>
-          <p style={{ color: "#94a3b8", margin: 0 }}>Assign workflow items, monitor current progress, and log operations.</p>
+        {/* Top Center Branding Banner matching your signature dashboard layout */}
+        <div style={{ textAlign: "center", marginBottom: "35px" }}>
+          <h1 style={{ fontSize: "32px", fontWeight: "700", margin: "0 0 8px 0", letterSpacing: "-0.02em", display: "flex", alignItems: "center", justifyContent: "center", gap: "10px" }}>
+            📋 Task Management
+          </h1>
+          <p style={{ color: "#94a3b8", margin: 0, fontSize: "15px" }}>
+            Schedule, track, and execute your team tasks in real-time.
+          </p>
         </div>
 
-        {/* 🛠️ Split Screen Layout (Left Side: Cards List, Right Side: Form View) */}
+        {/* Left-Right Split Configuration View */}
         <div
           style={{
             display: "grid",
-            gridTemplateColumns: "1fr 400px",
+            gridTemplateColumns: "1fr 380px",
             gap: "35px",
+            width: "100%",
+            maxWidth: "1440px",
             alignItems: "start"
           }}
         >
-          
-          {/* LEFT SIDE BLOCK: Search Engine Control panel and Cards listing */}
+          {/* LEFT COLUMN AREA: Dynamic Task Entries Feed Grid */}
           <div>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "20px", marginBottom: "25px" }}>
-              <h2 style={{ margin: 0, fontSize: "22px", fontWeight: "600" }}>All Dashboard Tasks ({filteredTasks.length})</h2>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "25px", flexWrap: "wrap", gap: "15px" }}>
+              <h2 style={{ margin: 0, fontSize: "20px", fontWeight: "700", letterSpacing: "-0.02em" }}>
+                Active Tasks ({filteredTasks.length})
+              </h2>
               <input
                 type="text"
-                placeholder="🔍 Search Task by title..."
+                placeholder="Search Task by title..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 style={{
-                  width: "300px",
-                  padding: "12px 16px",
-                  borderRadius: "24px",
+                  width: "260px",
+                  padding: "10px 14px",
+                  borderRadius: "6px",
                   border: "1px solid #334155",
                   background: "#1e293b",
                   color: "white",
-                  fontSize: "15px"
+                  fontSize: "14px",
+                  outline: "none"
                 }}
               />
             </div>
 
-            {/* Tasks Dynamic Grid Panel */}
+            {/* Premium Slate Dark Layout Cards Grid System */}
             <div
               style={{
                 display: "grid",
-                gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))",
-                gap: "20px",
+                gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))",
+                gap: "20px"
               }}
             >
               {filteredTasks.length === 0 ? (
-                <p style={{ color: "#94a3b8", fontSize: "16px" }}>No Tasks Found</p>
+                <p style={{ color: "#64748b", fontSize: "15px", fontStyle: "italic", textAlign: "left", gridColumn: "1/-1" }}>No Tasks Found</p>
               ) : (
                 filteredTasks.map((task) => (
                   <div
                     key={task._id}
                     style={{
                       background: "#1e293b",
-                      color: "white",
-                      padding: "24px",
                       borderRadius: "12px",
                       border: "1px solid #334155",
-                      boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.3)",
+                      padding: "24px",
                       display: "flex",
                       flexDirection: "column",
                       justifyContent: "space-between",
-                      minHeight: "180px"
+                      minHeight: "220px",
+                      position: "relative",
+                      boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.2)"
                     }}
                   >
-                    <div>
-                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "10px", marginBottom: "12px" }}>
-                        <h3 style={{ margin: 0, fontSize: "17px", fontWeight: "600", color: "#f8fafc" }}>{task.title}</h3>
-                        <span
-                          style={{
-                            padding: "4px 10px",
-                            borderRadius: "12px",
-                            color: "white",
-                            fontWeight: "bold",
-                            fontSize: "11px",
-                            whiteSpace: "nowrap",
-                            background: task.status === "Completed" ? "#16a34a" : "#f97316",
-                          }}
-                        >
-                          {task.status || "Pending"}
-                        </span>
-                      </div>
+                    {/* Corner Status Indicator Badge */}
+                    <span
+                      style={{
+                        position: "absolute",
+                        top: "20px",
+                        right: "20px",
+                        padding: "4px 10px",
+                        borderRadius: "6px",
+                        fontSize: "11px",
+                        fontWeight: "700",
+                        color: "white",
+                        background: task.status === "Completed" ? "#16a34a" : "#ea580c"
+                      }}
+                    >
+                      {task.status || "Pending"}
+                    </span>
 
-                      <p style={{ color: "#94a3b8", fontSize: "13.5px", margin: "0 0 16px 0", lineHeight: "1.5" }}>{task.description}</p>
-                      
-                      <p style={{ fontSize: "13px", margin: "4px 0", color: "#cbd5e1" }}>
-                        👤 <b>Assigned To:</b> {task.assignedTo}
+                    {/* Central Meta Data Information Box */}
+                    <div style={{ textAlign: "center", marginTop: "10px" }}>
+                      <h3 style={{ margin: "0 0 12px 0", fontSize: "20px", fontWeight: "700", color: "#f8fafc", wordBreak: "break-word" }}>
+                        {task.title}
+                      </h3>
+                      <p style={{ color: "#94a3b8", fontSize: "14px", margin: "0 0 14px 0", lineHeight: "1.5", wordBreak: "break-word" }}>
+                        {task.description}
                       </p>
+                      <div style={{ fontSize: "13px", color: "#cbd5e1", fontWeight: "500" }}>
+                        👤 <b>Assigned To:</b> {task.assignedTo}
+                      </div>
                     </div>
 
-                    {/* Integrated row configurations for Action triggers */}
-                    <div style={{ display: "flex", gap: "6px", marginTop: "15px", borderTop: "1px solid #334155", paddingTop: "14px" }}>
+                    {/* 🔄 FIXED ACTION TRUGGERS: Matching exact button names & colors from Screenshot 291 */}
+                    <div
+                      style={{
+                        display: "flex",
+                        gap: "10px",
+                        justifyContent: "center",
+                        marginTop: "20px",
+                        borderTop: "1px solid #334155",
+                        paddingTop: "16px",
+                        flexWrap: "wrap"
+                      }}
+                    >
                       <button
                         onClick={() => editTask(task)}
-                        style={{ flex: "1", padding: "8px 0", background: "#f59e0b", color: "white", border: "none", borderRadius: "6px", fontWeight: "bold", cursor: "pointer", fontSize: "12px" }}
+                        style={{ padding: "8px 16px", background: "#f59e0b", color: "white", border: "none", borderRadius: "4px", fontWeight: "bold", cursor: "pointer", fontSize: "13px", display: "flex", alignItems: "center", gap: "4px" }}
                       >
                         ✏️ Edit
                       </button>
@@ -215,17 +242,17 @@ function Tasks() {
                       {task.status !== "Completed" && (
                         <button
                           onClick={() => completeTask(task._id)}
-                          style={{ flex: "1.4", padding: "8px 0", background: "#10b981", color: "white", border: "none", borderRadius: "6px", fontWeight: "bold", cursor: "pointer", fontSize: "12px" }}
+                          style={{ padding: "8px 16px", background: "#16a34a", color: "white", border: "none", borderRadius: "4px", fontWeight: "bold", cursor: "pointer", fontSize: "13px", display: "flex", alignItems: "center", gap: "4px" }}
                         >
-                          ✅ Done
+                          ✅ Mark Complete
                         </button>
                       )}
 
                       <button
                         onClick={() => deleteTask(task._id)}
-                        style={{ flex: "1", padding: "8px 0", background: "#ef4444", color: "white", border: "none", borderRadius: "6px", fontWeight: "bold", cursor: "pointer", fontSize: "12px" }}
+                        style={{ padding: "8px 16px", background: "#ef4444", color: "white", border: "none", borderRadius: "4px", fontWeight: "bold", cursor: "pointer", fontSize: "13px", display: "flex", alignItems: "center", gap: "4px" }}
                       >
-                        🗑️ Delete
+                        🗑️ Delete Task
                       </button>
                     </div>
                   </div>
@@ -234,72 +261,62 @@ function Tasks() {
             </div>
           </div>
 
-          {/* RIGHT SIDE BLOCK: Sticky Form Panel Component container */}
+          {/* RIGHT COLUMN AREA: Sticky Operation Schedule Sidebar */}
           <div
             style={{
               background: "#1e293b",
-              padding: "25px",
               borderRadius: "12px",
               border: "1px solid #334155",
-              boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.2)",
+              padding: "25px",
+              boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.3)",
               position: "sticky",
               top: "20px"
             }}
           >
-            <h3 style={{ margin: "0 0 20px 0", color: "#38bdf8", fontSize: "18px", fontWeight: "600" }}>
-              {editingId ? "✏️ Edit Task Specifications" : "➕ Create New Project Task"}
+            <h3 style={{ margin: "0 0 20px 0", color: "#38bdf8", fontSize: "16px", fontWeight: "700", textAlign: "left", display: "flex", alignItems: "center", gap: "8px" }}>
+              <span>➕</span> {editingId ? "Edit Task Specifications" : "Schedule New Task"}
             </h3>
 
-            <div style={{ display: "flex", flexDirection: "column", gap: "15px" }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
               <div>
-                <label style={{ fontSize: "13px", color: "#94a3b8", display: "block", marginBottom: "5px" }}>Task Title</label>
-                <input
-                  type="text"
-                  placeholder="e.g. Design Login UI"
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  style={{ width: "100%", padding: "12px", borderRadius: "8px", border: "1px solid #475569", background: "#0f172a", color: "white", fontSize: "15px", boxSizing: "border-box" }}
-                />
+                <label style={{ fontSize: "12px", color: "#94a3b8", display: "block", marginBottom: "6px", textAlign: "left", fontWeight: "600" }}>Task Title</label>
+                <input type="text" placeholder="e.g. Project Sync Up" value={title} onChange={(e) => setTitle(e.target.value)} style={{ width: "100%", padding: "12px 14px", borderRadius: "6px", border: "1px solid #334155", background: "#0f172a", color: "white", fontSize: "14px", boxSizing: "border-box", outline: "none" }} />
               </div>
 
               <div>
-                <label style={{ fontSize: "13px", color: "#94a3b8", display: "block", marginBottom: "5px" }}>Description</label>
-                <input
-                  type="text"
-                  placeholder="Enter sprint objective details..."
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  style={{ width: "100%", padding: "12px", borderRadius: "8px", border: "1px solid #475569", background: "#0f172a", color: "white", fontSize: "15px", boxSizing: "border-box" }}
-                />
+                <label style={{ fontSize: "12px", color: "#94a3b8", display: "block", marginBottom: "6px", textAlign: "left", fontWeight: "600" }}>Description</label>
+                <input type="text" placeholder="Enter task objective..." value={description} onChange={(e) => setDescription(e.target.value)} style={{ width: "100%", padding: "12px 14px", borderRadius: "6px", border: "1px solid #334155", background: "#0f172a", color: "white", fontSize: "14px", boxSizing: "border-box", outline: "none" }} />
               </div>
 
               <div>
-                <label style={{ fontSize: "13px", color: "#94a3b8", display: "block", marginBottom: "5px" }}>Assigned Specialist</label>
-                <input
-                  type="text"
-                  placeholder="e.g. Krenil Patel"
-                  value={assignedTo}
-                  onChange={(e) => setAssignedTo(e.target.value)}
-                  style={{ width: "100%", padding: "12px", borderRadius: "8px", border: "1px solid #475569", background: "#0f172a", color: "white", fontSize: "15px", boxSizing: "border-box" }}
-                />
+                <label style={{ fontSize: "12px", color: "#94a3b8", display: "block", marginBottom: "6px", textAlign: "left", fontWeight: "600" }}>Assigned Specialist</label>
+                <input type="text" placeholder="e.g. Krenil Patel" value={assignedTo} onChange={(e) => setAssignedTo(e.target.value)} style={{ width: "100%", padding: "12px 14px", borderRadius: "6px", border: "1px solid #334155", background: "#0f172a", color: "white", fontSize: "14px", boxSizing: "border-box", outline: "none" }} />
               </div>
 
-              <div style={{ display: "flex", gap: "10px", marginTop: "10px" }}>
-                <button
-                  onClick={editingId ? updateTask : createTask}
-                  style={{ flex: "1", padding: "12px", background: editingId ? "orange" : "#16a34a", color: "white", border: "none", borderRadius: "8px", fontWeight: "bold", cursor: "pointer", fontSize: "15px" }}
-                >
-                  {editingId ? "Update Task" : "Create Task"}
+              <button
+                onClick={editingId ? updateTask : createTask}
+                style={{
+                  width: "100%",
+                  padding: "12px",
+                  marginTop: "8px",
+                  background: "#2563eb",
+                  color: "white",
+                  border: "none",
+                  borderRadius: "6px",
+                  fontWeight: "700",
+                  cursor: "pointer",
+                  fontSize: "15px",
+                  boxShadow: "0 4px 6px rgba(37, 99, 235, 0.2)"
+                }}
+              >
+                {editingId ? "Update Task Specifications" : "Create Task Entry"}
+              </button>
+              
+              {editingId && (
+                <button onClick={resetForm} style={{ width: "100%", padding: "10px", background: "#475569", color: "white", border: "none", borderRadius: "6px", fontWeight: "700", cursor: "pointer", fontSize: "14px" }}>
+                  Cancel
                 </button>
-                {editingId && (
-                  <button
-                    onClick={resetForm}
-                    style={{ padding: "12px", background: "#475569", color: "white", border: "none", borderRadius: "8px", fontWeight: "bold", cursor: "pointer", fontSize: "15px" }}
-                  >
-                    Cancel
-                  </button>
-                )}
-              </div>
+              )}
             </div>
           </div>
 
