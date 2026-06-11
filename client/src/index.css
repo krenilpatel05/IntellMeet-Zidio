@@ -52,15 +52,16 @@
 
 body {
   margin: 0;
+  background: #0f172a; /* IntellMeet dark theme color fallback */
 }
 
+/* 🛠️ FIX: Fixed width 1126px aur border-inline ko hata kar 100% full screen stretch lagaya hai */
 #root {
-  width: 1126px;
+  width: 100%;
   max-width: 100%;
-  margin: 0 auto;
+  margin: 0;
   text-align: center;
-  border-inline: 1px solid var(--border);
-  min-height: 100svh;
+  min-height: 100vh;
   display: flex;
   flex-direction: column;
   box-sizing: border-box;
