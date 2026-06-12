@@ -1,38 +1,41 @@
 import { useState } from "react";
-import axios from "axios";
+// 💡 CENTRAL PRODUCTION CONFIG IMPORT:
+import api from "../services/api"; 
+import { Link, useNavigate } from "react-router-dom"; 
 
-function Login() {
+function Register() {
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false); // 🛠️ Password toggle feature state
+  const navigate = useNavigate();
 
-  const loginUser = async () => {
-    if (!email || !password) {
-      alert("Please enter both email and password");
+  const registerUser = async () => {
+    if (!name || !email || !password) {
+      alert("Please fill in all fields");
       return;
     }
 
     try {
-      const res = await axios.post("http://localhost:5000/api/auth/login", {
+      // 💡 AUTOMATIC PRODUCTION ROUTING VIA INSTANCE:
+      const res = await api.post("/auth/register", {
+        name,
         email,
         password,
       });
 
-      alert(res.data.message);
-      localStorage.setItem("token", res.data.token);
-      window.location.href = "/dashboard";
+      alert(res.data.message || "Registration Successful!");
+      navigate("/"); // Register hone ke baad automatic login screen par redirect
     } catch (error) {
-      alert(error.response?.data?.message || "Login Failed");
+      alert(error.response?.data?.message || "Registration Failed");
     }
   };
 
   const handleKeyDown = (e) => {
     if (e.key === "Enter") {
-      loginUser();
+      registerUser();
     }
   };
 
-  // Reusable inline style constants for inputs configuration
   const inputStyle = {
     width: "100%",
     padding: "12px 14px",
@@ -80,7 +83,6 @@ function Login() {
           boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.4), 0 10px 10px -5px rgba(0, 0, 0, 0.3)",
         }}
       >
-        {/* Brand App Identity Block */}
         <div style={{ textAlign: "center", marginBottom: "32px" }}>
           <h1
             style={{
@@ -98,12 +100,27 @@ function Login() {
             <span>🚀</span> IntellMeet
           </h1>
           <p style={{ color: "#94a3b8", fontSize: "14px", margin: 0 }}>
-            Welcome back! Please sign in to your account.
+            Create your account to get started.
           </p>
         </div>
 
-        {/* Input Interactive Collection Stack */}
         <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+          <div>
+            <label style={{ fontSize: "13px", color: "#cbd5e1", display: "block", marginBottom: "6px", fontWeight: "600" }}>
+              Full Name
+            </label>
+            <input
+              type="text"
+              placeholder="John Doe"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              onKeyDown={handleKeyDown}
+              onFocus={handleInputFocus}
+              onBlur={handleInputBlur}
+              style={inputStyle}
+            />
+          </div>
+
           <div>
             <label style={{ fontSize: "13px", color: "#cbd5e1", display: "block", marginBottom: "6px", fontWeight: "600" }}>
               Email Address
@@ -124,42 +141,20 @@ function Login() {
             <label style={{ fontSize: "13px", color: "#cbd5e1", display: "block", marginBottom: "6px", fontWeight: "600" }}>
               Password
             </label>
-            <div style={{ position: "relative", display: "flex", alignItems: "center" }}>
-              <input
-                type={showPassword ? "text" : "password"}
-                placeholder="••••••••"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                onKeyDown={handleKeyDown}
-                onFocus={handleInputFocus}
-                onBlur={handleInputBlur}
-                style={{ ...inputStyle, paddingRight: "45px" }} // Added explicit bounds space for standard indicators
-              />
-              {/* Dynamic Eye Toggle Indicator button styling */}
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                style={{
-                  position: "absolute",
-                  right: "12px",
-                  background: "none",
-                  border: "none",
-                  color: "#64748b",
-                  cursor: "pointer",
-                  fontSize: "14px",
-                  fontWeight: "600",
-                  outline: "none",
-                  userSelect: "none"
-                }}
-              >
-                {showPassword ? "👁️" : "🙈"}
-              </button>
-            </div>
+            <input
+              type="password"
+              placeholder="••••••••"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              onKeyDown={handleKeyDown}
+              onFocus={handleInputFocus}
+              onBlur={handleInputBlur}
+              style={inputStyle}
+            />
           </div>
 
-          {/* Submitting Sign-In Primary CTA */}
           <button
-            onClick={loginUser}
+            onClick={registerUser}
             style={{
               width: "100%",
               padding: "14px",
@@ -183,11 +178,10 @@ function Login() {
               e.target.style.transform = "translateY(0)";
             }}
           >
-            Sign In
+            Register
           </button>
         </div>
 
-        {/* Redirecting Toggle Anchor row */}
         <p
           style={{
             textAlign: "center",
@@ -197,9 +191,9 @@ function Login() {
             margin: "30px 0 0 0"
           }}
         >
-          Don't have an account?{" "}
-          <a
-            href="/register"
+          Already have an account?{" "}
+          <Link
+            to="/"
             style={{
               color: "#38bdf8",
               fontWeight: "bold",
@@ -210,12 +204,12 @@ function Login() {
             onMouseOver={(e) => e.target.style.color = "#7dd3fc"}
             onMouseOut={(e) => e.target.style.color = "#38bdf8"}
           >
-            Register
-          </a>
+            Sign In
+          </Link>
         </p>
       </div>
     </div>
   );
 }
 
-export default Login;
+export default Register;
