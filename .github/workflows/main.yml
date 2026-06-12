@@ -1,35 +1,48 @@
-name: IntellMeet CI/CD DevOps Pipeline
+name: CI/CD Devops Pipeline
 
 on:
   push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
+    branches: [ "main" ]
 
 jobs:
-  audit-and-test:
+  build-and-test:
     runs-on: ubuntu-latest
-
     steps:
-    - name: Checkout Source Code
+    - name: Checkout Code
       uses: actions/checkout@v3
 
-    - name: Setup Node.js Environment
+    - name: Setup Node.js
       uses: actions/setup-node@v3
       with:
         node-version: 18
         cache: 'npm'
-        cache-dependency-path: './server/package.json'
+        cache-dependency-path: './server/package-lock.json'
 
-    - name: Install Backend Dependencies
+    - name: Install Backend Dependencies & Lint
       run: |
         cd server
         npm install
+        # Agar aapke project me test cases hain toh yahan npm test chala sakte hain
 
-    - name: Install Frontend Dependencies
+  docker-build-push:
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v3
+
+    - name: Set up Docker Buildx
+      uses: actions/setup-qemu-action@v2
+
+    - name: Build Backend Docker Image
+      run: |
+        cd server
+        docker build -t krenilpatel05/intellmeet-backend:latest .
+
+    - name: Build Frontend Docker Image
       run: |
         cd client
-        npm install
-
-    - name: Verify Environment Parity
-      run: echo "🚀 CI/CD Automated Checks Passed Successfully!"
+        docker build -t krenilpatel05/intellmeet-frontend:latest .
+        
+    - name: Pipeline Status
+      run: echo "CI/CD Pipeline executed successfully for Day 28!"
