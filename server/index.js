@@ -30,15 +30,16 @@ app.get("/", (req, res) => {
   });
 });
 
-// 💡 DYNAMIC DB SELECTION: Production/Deployment me Cloud chalega, Local me 127.0.0.1 chalega!
-const dbURI = process.env.NODE_ENV === "production"
-  ? "mongodb+srv://krenil:Krenil12345@cluster0.1sihu41.mongodb.net/intellmeet?retryWrites=true&w=majority"
-  : "mongodb://127.0.0.1:27017/intellmeet";
+// 💡 PRODUCTION SAFE DB SELECTION: Priority to Cloud Atlas URI, Fallback to local
+const dbURI = process.env.MONGO_URI || 
+  (process.env.NODE_ENV === "production"
+    ? "mongodb+srv://krenil:Krenil12345@cluster0.1sihu41.mongodb.net/intellmeet?retryWrites=true&w=majority"
+    : "mongodb://127.0.0.1:27017/intellmeet");
 
 mongoose
   .connect(dbURI)
   .then(() => {
-    console.log(process.env.NODE_ENV === "production"
+    console.log(dbURI.includes("mongodb+srv")
       ? "✅ MongoDB Connected Successfully to Cloud Atlas!"
       : "✅ Connected Successfully to Local MongoDB Backend!"
     );
@@ -54,11 +55,15 @@ const server = app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
 });
 
-// Socket.io Configured Securely
+// 🔒 Socket.io Configured Securely for both Local and Production (Mobile Support)
 const io = new Server(server, {
   cors: {
-    origin: "http://localhost:5173",
+    origin: [
+      "http://localhost:5173",
+      "https://intell-meet-zidio-psi.vercel.app"
+    ],
     methods: ["GET", "POST"],
+    credentials: true
   },
 });
 
