@@ -8,7 +8,7 @@ const { Server } = require("socket.io");
 const authRoutes = require("./routes/authRoutes");
 const meetingRoutes = require("./routes/meetingRoutes");
 const taskRoutes = require("./routes/taskRoutes");
-const aiRoutes = require("./routes/ai"); // Week 3 AI Route Importer
+const aiRoutes = require("./routes/ai"); 
 
 const app = express();
 
@@ -20,7 +20,7 @@ app.use(express.json());
 app.use("/api/auth", authRoutes);
 app.use("/api/meetings", meetingRoutes);
 app.use("/api/tasks", taskRoutes);
-app.use("/api/ai", aiRoutes); // Week 3 AI Route Dynamic Integration
+app.use("/api/ai", aiRoutes); 
 
 // Home Route
 app.get("/", (req, res) => {
@@ -30,14 +30,21 @@ app.get("/", (req, res) => {
   });
 });
 
-// MongoDB Connection
+// 💡 DYNAMIC DB SELECTION: Production/Deployment me Cloud chalega, Local me 127.0.0.1 chalega!
+const dbURI = process.env.NODE_ENV === "production"
+  ? "mongodb+srv://krenil:Krenil12345@cluster0.1sihu41.mongodb.net/intellmeet?retryWrites=true&w=majority"
+  : "mongodb://127.0.0.1:27017/intellmeet";
+
 mongoose
-  .connect(process.env.MONGO_URI)
+  .connect(dbURI)
   .then(() => {
-    console.log("✅ MongoDB Connected");
+    console.log(process.env.NODE_ENV === "production"
+      ? "✅ MongoDB Connected Successfully to Cloud Atlas!"
+      : "✅ Connected Successfully to Local MongoDB Backend!"
+    );
   })
   .catch((err) => {
-    console.log("❌ DB Error:", err.message);
+    console.log("❌ DB Connection Error:", err.message);
   });
 
 // Server Initialization
@@ -59,28 +66,23 @@ const io = new Server(server, {
 io.on("connection", (socket) => {
   console.log(`User Connected: ${socket.id}`);
 
-  // Global Chat Trigger fallback logic
   socket.on("sendMessage", (message) => {
     io.emit("receiveMessage", message);
   });
 
-  // Room Connection Trigger
   socket.on("joinMeetingRoom", (meetingId) => {
     socket.join(meetingId);
     console.log(`📡 Socket connection isolation initialized for room: ${meetingId}`);
   });
 
-  // In-Meeting Real-time Live Chat
   socket.on("sendInMeetingMessage", ({ meetingId, message, sender }) => {
     io.to(meetingId).emit("receiveInMeetingMessage", { message, sender });
   });
 
-  // In-Meeting Keyboard Action Indicators Tracking
   socket.on("typingInMeeting", ({ meetingId, sender, isTyping }) => {
     socket.to(meetingId).emit("userTypingInMeeting", { sender, isTyping });
   });
 
-  // Safe Secure Lifecycle Break Down Disconnect Listener
   socket.on("disconnect", () => {
     console.log(`User Disconnected securely: ${socket.id}`);
   });
