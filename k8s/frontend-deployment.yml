@@ -1,11 +1,11 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: intellmeet-frontend-deployment
+  name: intellmeet-frontend
   labels:
     app: intellmeet-frontend
 spec:
-  replicas: 2
+  replicas: 2 # Frontend ke bhi 2 pods parallel chalenge
   selector:
     matchLabels:
       app: intellmeet-frontend
@@ -15,7 +15,7 @@ spec:
         app: intellmeet-frontend
     spec:
       containers:
-      - name: frontend-ui
+      - name: frontend-container
         image: krenilpatel05/intellmeet-frontend:latest
         ports:
         - containerPort: 80
@@ -25,9 +25,10 @@ kind: Service
 metadata:
   name: intellmeet-frontend-service
 spec:
-  type: LoadBalancer
+  type: NodePort # Local machine ya browser par test karne ke liye access dega
   selector:
     app: intellmeet-frontend
   ports:
-  - port: 80
-    targetPort: 80
+    - port: 80
+      targetPort: 80
+      nodePort: 30080 # Browser me localhost:30080 par chalane ke liye
