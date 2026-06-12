@@ -1,5 +1,6 @@
 import axios from "axios";
 
 export default axios.create({
-  baseURL: "http://localhost:5000/api",
+  // Agar environment variable mile toh wo, nahi toh direct Render ka live link
+  baseURL: import.meta.env.VITE_API_URL || "https://intellmeet-backend-iucw.onrender.com/api",
 });
