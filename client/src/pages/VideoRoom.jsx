@@ -16,7 +16,7 @@ function VideoRoom() {
   // 🛠️ DAY 13 STATE: Active Sidebar View Control Indicator Toggle (Chat vs Participants)
   const [activeSidebar, setActiveSidebar] = useState("chat"); // Options: "chat" or "participants"
   
-  // 🛠️ DAY 13 STATE: Live Participants Mock Array (In Future: Fetch dynamically from Backend Socket)
+  // 🛠️ DAY 13 STATE: Live Participants Mock Array
   const [participantList, setParticipantList] = useState([
     { id: "1", name: "Krenil Patel (You)", isMuted: false, role: "Host" },
     { id: "2", name: "Team Specialist", isMuted: true, role: "Member" },
@@ -70,7 +70,6 @@ function VideoRoom() {
   // 🛠️ DAY 12 FIX: Robust Screen Share Stability Handling
   const startScreenShare = async () => {
     if (screenSharing) {
-      // Agar pehle se screen share chal rahi hai toh use stop karke normal camera stream chalayein
       if (videoRef.current && originalStream) {
         videoRef.current.srcObject = originalStream;
         setScreenSharing(false);
@@ -86,7 +85,6 @@ function VideoRoom() {
       videoRef.current.srcObject = screenStream;
       setScreenSharing(true);
 
-      // Jab user browser popup se screen share band karega (Stop Sharing banner click)
       screenStream.getVideoTracks()[0].onended = () => {
         if (videoRef.current && originalStream) {
           videoRef.current.srcObject = originalStream;
@@ -104,7 +102,6 @@ function VideoRoom() {
       stream.getAudioTracks()[0].enabled = !stream.getAudioTracks()[0].enabled;
       setIsMuted(!isMuted);
       
-      // Update our participant block local record view
       setParticipantList(prev => prev.map(p => p.id === "1" ? { ...p, isMuted: !isMuted } : p));
     }
   };
@@ -235,7 +232,7 @@ function VideoRoom() {
                 width: "100%",
                 height: "100%",
                 objectFit: "cover",
-                transform: screenSharing ? "none" : "scaleX(-1)" // No mirror effect during active screen share session
+                transform: screenSharing ? "none" : "scaleX(-1)" 
               }}
             />
 
@@ -253,7 +250,7 @@ function VideoRoom() {
             )}
           </div>
 
-          {/* RIGHT SIDE PANEL VIEW CONTAINER: Conditional Routing based on Selection state type */}
+          {/* RIGHT SIDE PANEL VIEW CONTAINER */}
           <div
             style={{
               background: "#1e293b",
@@ -262,7 +259,8 @@ function VideoRoom() {
               display: "flex",
               flexDirection: "column",
               boxSizing: "border-box",
-              boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.6)"
+              boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.6)",
+              overflow: "hidden"
             }}
           >
             {activeSidebar === "chat" ? (
@@ -272,21 +270,36 @@ function VideoRoom() {
                   <h3 style={{ margin: 0, color: "#38bdf8", fontSize: "16px", fontWeight: "700" }}>💬 Room Live Chat Window</h3>
                 </div>
 
-                <div style={{ flex: "1", padding: "20px", overflowY: "auto", display: "flex", flexDirection: "column", gap: "12px", maxHeight: "360px", background: "#0f172a", margin: "20px", borderRadius: "12px", border: "1px solid #1e293b" }}>
+                {/* 🛠️ OVERFLOW FIX BLOCK: Added rigid padding limits bounds for structural alignment */}
+                <div style={{ flex: "1", padding: "16px", overflowY: "auto", display: "flex", flexDirection: "column", gap: "12px", maxHeight: "360px", background: "#0f172a", margin: "20px", borderRadius: "12px", border: "1px solid #1e293b", boxSizing: "border-box" }}>
                   {chatMessages.length === 0 ? (
                     <p style={{ color: "#475569", textAlign: "center", fontSize: "13px", marginTop: "40px" }}>No stream messages logs yet.</p>
                   ) : (
                     chatMessages.map((m, idx) => (
-                      <div key={idx} style={{ background: m.sender === currentUser ? "#2563eb" : "#334155", color: "white", padding: "10px 14px", borderRadius: m.sender === currentUser ? "12px 12px 2px 12px" : "12px 12px 12px 2px", maxWidth: "85%", alignSelf: m.sender === currentUser ? "flex-end" : "flex-start", fontSize: "14px" }}>
+                      <div 
+                        key={idx} 
+                        style={{ 
+                          background: m.sender === currentUser ? "#2563eb" : "#334155", 
+                          color: "white", 
+                          padding: "10px 14px", 
+                          borderRadius: m.sender === currentUser ? "12px 12px 2px 12px" : "12px 12px 12px 2px", 
+                          maxWidth: "90%", // Increased slightly for clean balance
+                          alignSelf: m.sender === currentUser ? "flex-end" : "flex-start", 
+                          fontSize: "14px",
+                          boxSizing: "border-box", // Strictly contains layout margins
+                          wordBreak: "break-word", // Ensures text wraps tightly under edges
+                          textAlign: "left"
+                        }}
+                      >
                         <div style={{ fontSize: "11px", opacity: 0.75, marginBottom: "3px", fontWeight: "bold" }}>{m.sender}</div>
-                        <div style={{ wordBreak: "break-all" }}>{m.message}</div>
+                        <div style={{ whiteSpace: "pre-wrap" }}>{m.message}</div>
                       </div>
                     ))
                   )}
                   <div ref={chatEndRef} />
                 </div>
 
-                <div style={{ height: "20px", padding: "0 24px", fontSize: "12px", color: "#38bdf8", fontStyle: "italic" }}>
+                <div style={{ height: "20px", padding: "0 24px", fontSize: "12px", color: "#38bdf8", fontStyle: "italic", textAlign: "left" }}>
                   {typingStatus}
                 </div>
 
@@ -296,7 +309,7 @@ function VideoRoom() {
                 </div>
               </>
             ) : (
-              /* PANEL TYPE 2: 🛠️ DAY 13 EXCLUSIVE - Live Participant Presence List & Mute Controllers */
+              /* PANEL TYPE 2: 🛠️ DAY 13 EXCLUSIVE - Live Participant Presence List */
               <>
                 <div style={{ padding: "20px 24px", borderBottom: "1px solid #334155" }}>
                   <h3 style={{ margin: 0, color: "#10b981", fontSize: "16px", fontWeight: "700" }}>👥 Active Call Participants</h3>
@@ -308,15 +321,14 @@ function VideoRoom() {
                       key={user.id} 
                       style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px", background: "#1e293b", borderRadius: "8px", border: "1px solid #334155" }}
                     >
-                      <div>
+                      <div style={{ textAlign: "left" }}>
                         <div style={{ fontSize: "14px", fontWeight: "600", color: "#f8fafc" }}>{user.name}</div>
                         <div style={{ fontSize: "11px", color: "#64748b", marginTop: "2px" }}>⚙️ Role: {user.role}</div>
                       </div>
 
-                      {/* Microphones Remote control switches togglers */}
                       <button
                         onClick={() => toggleRemoteParticipantMute(user.id)}
-                        disabled={user.id === "1"} // Local client toggle bypass rule setup safely
+                        disabled={user.id === "1"} 
                         style={{
                           padding: "6px 12px",
                           borderRadius: "6px",
@@ -334,7 +346,7 @@ function VideoRoom() {
                     </div>
                   ))}
                 </div>
-                <div style={{ padding: "20px", borderTop: "1px solid #334155", textStyle: "center", color: "#64748b", fontSize: "13px" }}>
+                <div style={{ padding: "20px", borderTop: "1px solid #334155", textAlign: "center", color: "#64748b", fontSize: "13px" }}>
                   🔒 Connection secured via server tunnels.
                 </div>
               </>
