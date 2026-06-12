@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: intellmeet-backend-deployment
+  labels:
+    app: intellmeet-backend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: intellmeet-backend
+  template:
+    metadata:
+      labels:
+        app: intellmeet-backend
+    spec:
+      containers:
+      - name: backend-api
+        image: krenilpatel05/intellmeet-backend:latest
+        ports:
+        - containerPort: 5000
+        env:
+        - name: PORT
+          value: "5000"
+        - name: NODE_ENV
+          value: "production"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: intellmeet-backend-service
+spec:
+  type: ClusterIP
+  selector:
+    app: intellmeet-backend
+  ports:
+  - port: 5000
+    targetPort: 5000
