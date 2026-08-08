@@ -76,11 +76,12 @@ router.post("/login", async (req, res) => {
       });
     }
 
+    // JWT_SECRET ka fallback "default_secret_key_123" rakha hai
     const token = jwt.sign(
       {
         id: user._id,
       },
-      process.env.JWT_SECRET,
+      process.env.JWT_SECRET || "default_secret_key_123",
       {
         expiresIn: "7d",
       }
