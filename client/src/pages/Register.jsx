@@ -1,5 +1,4 @@
 import { useState } from "react";
-// 💡 CENTRAL PRODUCTION CONFIG IMPORT:
 import api from "../services/api"; 
 import { Link, useNavigate } from "react-router-dom"; 
 
@@ -7,16 +6,19 @@ function Register() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  const registerUser = async () => {
+  const registerUser = async (e) => {
+    if (e) e.preventDefault();
+
     if (!name || !email || !password) {
       alert("Please fill in all fields");
       return;
     }
 
     try {
-      // 💡 AUTOMATIC PRODUCTION ROUTING VIA INSTANCE:
+      setLoading(true);
       const res = await api.post("/auth/register", {
         name,
         email,
@@ -24,9 +26,12 @@ function Register() {
       });
 
       alert(res.data.message || "Registration Successful!");
-      navigate("/"); // Register hone ke baad automatic login screen par redirect
+      navigate("/"); 
     } catch (error) {
-      alert(error.response?.data?.message || "Registration Failed");
+      console.error("Register Error:", error);
+      alert(error.response?.data?.message || "Registration Failed. Please try again.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -47,16 +52,6 @@ function Register() {
     outline: "none",
     boxSizing: "border-box",
     transition: "all 0.2s ease-in-out"
-  };
-
-  const handleInputFocus = (e) => {
-    e.target.style.borderColor = "#3b82f6";
-    e.target.style.boxShadow = "0 0 0 3px rgba(59, 130, 246, 0.25)";
-  };
-
-  const handleInputBlur = (e) => {
-    e.target.style.borderColor = "#475569";
-    e.target.style.boxShadow = "none";
   };
 
   return (
@@ -104,7 +99,7 @@ function Register() {
           </p>
         </div>
 
-        <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+        <form onSubmit={registerUser} style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
           <div>
             <label style={{ fontSize: "13px", color: "#cbd5e1", display: "block", marginBottom: "6px", fontWeight: "600" }}>
               Full Name
@@ -115,8 +110,6 @@ function Register() {
               value={name}
               onChange={(e) => setName(e.target.value)}
               onKeyDown={handleKeyDown}
-              onFocus={handleInputFocus}
-              onBlur={handleInputBlur}
               style={inputStyle}
             />
           </div>
@@ -131,8 +124,6 @@ function Register() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               onKeyDown={handleKeyDown}
-              onFocus={handleInputFocus}
-              onBlur={handleInputBlur}
               style={inputStyle}
             />
           </div>
@@ -147,48 +138,37 @@ function Register() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               onKeyDown={handleKeyDown}
-              onFocus={handleInputFocus}
-              onBlur={handleInputBlur}
               style={inputStyle}
             />
           </div>
 
           <button
-            onClick={registerUser}
+            type="submit"
+            disabled={loading}
             style={{
               width: "100%",
               padding: "14px",
               marginTop: "10px",
-              background: "#2563eb",
+              background: loading ? "#64748b" : "#2563eb",
               color: "white",
               border: "none",
               borderRadius: "8px",
               fontWeight: "bold",
-              cursor: "pointer",
+              cursor: loading ? "not-allowed" : "pointer",
               fontSize: "16px",
               transition: "all 0.2s ease",
-              boxShadow: "0 4px 6px -1px rgba(37, 99, 235, 0.2)"
-            }}
-            onMouseOver={(e) => {
-              e.target.style.background = "#1d4ed8";
-              e.target.style.transform = "translateY(-1px)";
-            }}
-            onMouseOut={(e) => {
-              e.target.style.background = "#2563eb";
-              e.target.style.transform = "translateY(0)";
             }}
           >
-            Register
+            {loading ? "Registering..." : "Register"}
           </button>
-        </div>
+        </form>
 
         <p
           style={{
             textAlign: "center",
             marginTop: "30px",
             color: "#94a3b8",
-            fontSize: "14px",
-            margin: "30px 0 0 0"
+            fontSize: "14px"
           }}
         >
           Already have an account?{" "}
@@ -198,11 +178,8 @@ function Register() {
               color: "#38bdf8",
               fontWeight: "bold",
               textDecoration: "none",
-              marginLeft: "4px",
-              transition: "color 0.2s ease"
+              marginLeft: "4px"
             }}
-            onMouseOver={(e) => e.target.style.color = "#7dd3fc"}
-            onMouseOut={(e) => e.target.style.color = "#38bdf8"}
           >
             Sign In
           </Link>
