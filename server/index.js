@@ -1,5 +1,8 @@
 require("dotenv").config();
 
+const dns = require("dns");
+dns.setServers(["8.8.8.8", "8.8.4.4"]);
+
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
@@ -16,13 +19,12 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Routes Registration
+// Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/meetings", meetingRoutes);
 app.use("/api/tasks", taskRoutes);
 app.use("/api/ai", aiRoutes); 
 
-// Home Route
 app.get("/", (req, res) => {
   res.json({
     success: true,
@@ -30,19 +32,15 @@ app.get("/", (req, res) => {
   });
 });
 
-// 💡 PRODUCTION SAFE DB SELECTION: Priority to Cloud Atlas URI, Fallback to local
-const dbURI = process.env.MONGO_URI || 
-  (process.env.NODE_ENV === "production"
-    ? "mongodb+srv://krenil:Krenil12345@cluster0.1sihu41.mongodb.net/intellmeet?retryWrites=true&w=majority"
-    : "mongodb://127.0.0.1:27017/intellmeet");
+// Direct MongoDB Atlas URI
+const dbURI = "mongodb://pkrenil1432_db_user:Krenil12345@ac-ttdy390-shard-00-00.drqhze9.mongodb.net:27017,ac-ttdy390-shard-00-01.drqhze9.mongodb.net:27017,ac-ttdy390-shard-00-02.drqhze9.mongodb.net:27017/intellmeet?ssl=true&replicaSet=atlas-elo8kk-shard-0&authSource=admin&retryWrites=true&w=majority";
 
 mongoose
-  .connect(dbURI)
+  .connect(dbURI, {
+    serverSelectionTimeoutMS: 5000,
+  })
   .then(() => {
-    console.log(dbURI.includes("mongodb+srv")
-      ? "✅ MongoDB Connected Successfully to Cloud Atlas!"
-      : "✅ Connected Successfully to Local MongoDB Backend!"
-    );
+    console.log("🔥 MongoDB Connected Successfully to Cloud Atlas!");
   })
   .catch((err) => {
     console.log("❌ DB Connection Error:", err.message);
@@ -55,7 +53,7 @@ const server = app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
 });
 
-// 🔒 Socket.io Configured Securely for both Local and Production (Mobile Support)
+// Socket.io Setup
 const io = new Server(server, {
   cors: {
     origin: [
@@ -67,7 +65,6 @@ const io = new Server(server, {
   },
 });
 
-// Real-Time Socket Connection Handlers
 io.on("connection", (socket) => {
   console.log(`User Connected: ${socket.id}`);
 
