@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { io } from "socket.io-client";
 import Navbar from "../components/Navbar";
 
-const socket = io("http://localhost:5000");
+const socket = io("https://intellmeet-zidio-u38m.onrender.com");
 
 function ChatRoom() {
   const [message, setMessage] = useState("");

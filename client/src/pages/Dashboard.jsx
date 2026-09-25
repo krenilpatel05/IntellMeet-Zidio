@@ -22,8 +22,8 @@ function Dashboard() {
 
   const fetchDashboardData = async () => {
     try {
-      const meetingRes = await axios.get("http://localhost:5000/api/meetings");
-      const taskRes = await axios.get("http://localhost:5000/api/tasks");
+      const meetingRes = await axios.get("https://intellmeet-zidio-u38m.onrender.com/api/meetings");
+      const taskRes = await axios.get("https://intellmeet-zidio-u38m.onrender.com/api/tasks");
 
       const meetings = meetingRes.data.meetings || [];
       const tasks = taskRes.data.tasks || [];

@@ -18,7 +18,7 @@ function Meetings() {
 
   const fetchMeetings = async () => {
     try {
-      const res = await axios.get("http://localhost:5000/api/meetings");
+      const res = await axios.get("https://intellmeet-zidio-u38m.onrender.com/api/meetings");
       setMeetings(res.data.meetings || []);
     } catch (error) {
       console.log(error);
@@ -36,7 +36,7 @@ function Meetings() {
     }
 
     try {
-      await axios.post("http://localhost:5000/api/meetings/create", {
+      await axios.post("https://intellmeet-zidio-u38m.onrender.com/api/meetings/create", {
         title,
         description,
         date,
@@ -53,7 +53,7 @@ function Meetings() {
 
   const updateMeeting = async () => {
     try {
-      await axios.put(`http://localhost:5000/api/meetings/${editId}`, {
+      await axios.put(`https://intellmeet-zidio-u38m.onrender.com/api/meetings/${editId}`, {
         title,
         description,
         date,
@@ -79,7 +79,7 @@ function Meetings() {
   const deleteMeeting = async (id) => {
     if (window.confirm("Are you sure you want to delete this meeting?")) {
       try {
-        await axios.delete(`http://localhost:5000/api/meetings/${id}`);
+        await axios.delete(`https://intellmeet-zidio-u38m.onrender.com/api/meetings/${id}`);
         alert("🗑️ Meeting Deleted");
         fetchMeetings();
       } catch (error) {

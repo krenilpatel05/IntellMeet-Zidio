@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import Navbar from "../components/Navbar";
 import { io } from "socket.io-client";
 
-const socket = io("http://localhost:5000");
+const socket = io("https://intellmeet-zidio-u38m.onrender.com");
 
 function VideoRoom() {
   const videoRef = useRef();

@@ -16,7 +16,7 @@ function Tasks() {
 
   const fetchTasks = async () => {
     try {
-      const res = await axios.get("http://localhost:5000/api/tasks");
+      const res = await axios.get("https://intellmeet-zidio-u38m.onrender.com/api/tasks");
       setTasks(res.data.tasks || []);
     } catch (error) {
       console.log(error);
@@ -34,7 +34,7 @@ function Tasks() {
     }
 
     try {
-      await axios.post("http://localhost:5000/api/tasks/create", {
+      await axios.post("https://intellmeet-zidio-u38m.onrender.com/api/tasks/create", {
         title,
         description,
         assignedTo,
@@ -58,7 +58,7 @@ function Tasks() {
 
   const updateTask = async () => {
     try {
-      await axios.put(`http://localhost:5000/api/tasks/edit/${editingId}`, {
+      await axios.put(`https://intellmeet-zidio-u38m.onrender.com/api/tasks/edit/${editingId}`, {
         title,
         description,
         assignedTo,
@@ -74,7 +74,7 @@ function Tasks() {
 
   const completeTask = async (id) => {
     try {
-      await axios.put(`http://localhost:5000/api/tasks/${id}`);
+      await axios.put(`https://intellmeet-zidio-u38m.onrender.com/api/tasks/${id}`);
       alert("✅ Task Completed");
       fetchTasks();
     } catch (error) {
@@ -85,7 +85,7 @@ function Tasks() {
   const deleteTask = async (id) => {
     if (window.confirm("Are you sure you want to delete this task?")) {
       try {
-        await axios.delete(`http://localhost:5000/api/tasks/${id}`);
+        await axios.delete(`https://intellmeet-zidio-u38m.onrender.com/api/tasks/${id}`);
         alert("🗑️ Task Deleted");
         fetchTasks();
       } catch (error) {

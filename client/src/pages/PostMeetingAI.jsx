@@ -11,7 +11,7 @@ function PostMeetingAI() {
   const triggerAIProcessing = async () => {
     setLoading(true);
     try {
-      const res = await axios.post("http://localhost:5000/api/ai/generate-summary", {
+      const res = await axios.post("https://intellmeet-zidio-u38m.onrender.com/api/ai/generate-summary", {
         meetingTitle,
         transcripts: "Active tracking payload buffers capture logic executed dynamically."
       });
