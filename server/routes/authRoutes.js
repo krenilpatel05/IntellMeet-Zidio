@@ -33,12 +33,11 @@ router.post("/register", async (req, res) => {
       });
     }
 
-    const hashedPassword = await bcrypt.hash(password, 10);
-
+    // Direct password save karo taaki User model ka pre-save hook ise single time hash kare
     const user = new User({
       name: name ? name.trim() : "User",
       email,
-      password: hashedPassword,
+      password: password,
     });
 
     await user.save();
@@ -88,7 +87,13 @@ router.post("/login", async (req, res) => {
       });
     }
 
-    const isMatch = await bcrypt.compare(password, user.password);
+    // Dono scenarios support karega (hashed password aur plain text)
+    let isMatch = false;
+    if (user.password.startsWith("$2a$") || user.password.startsWith("$2b$")) {
+      isMatch = await bcrypt.compare(password, user.password);
+    } else {
+      isMatch = password === user.password;
+    }
 
     if (!isMatch) {
       return res.status(400).json({
